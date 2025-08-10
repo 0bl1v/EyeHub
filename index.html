@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shadcn/ui</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Loading screen styles */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #000000 0%, #111111 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Main content styles (initially hidden) */
+        #main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+
+        /* Common styles for both screens */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom, #000000 0%, #111111 100%);
+            color: white;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background grid pattern */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+        }
+
+        /* Radial gradient overlay */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse at center, rgba(120, 119, 198, 0.1) 0%, transparent 70%);
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .new-component-tag {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 40px;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .new-component-tag:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .new-component-tag::after {
+            content: '→';
+            margin-left: 6px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        h1 {
+            font-size: clamp(48px, 8vw, 72px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.03em;
+            background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: clamp(18px, 2.5vw, 20px);
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Glow effects */
+        .glow-1 {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(40px);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .glow-2 {
+            position: absolute;
+            top: 60%;
+            right: 10%;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(30px);
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .new-component-tag {
+                margin-bottom: 32px;
+                font-size: 12px;
+            }
+
+            h1 {
+                margin-bottom: 20px;
+            }
+
+            .subtitle {
+                margin-bottom: 32px;
+                font-size: 16px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                max-width: 280px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Main Content (initially hidden) -->
+    <div id="main-content">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        
+        <div class="container">
+            <div class="new-component-tag">
+                New Calendar Component
+            </div>
+            
+            <h1>The Foundation for your Design System</h1>
+            
+            <p class="subtitle">
+                A set of beautifully designed components that you can customize, extend, 
+                and build on. Start here then make it your own. Open Source. Open Code.
+            </p>
+            
+            <div class="button-group">
+                <a href="#" class="btn-primary">Get Started</a>
+                <a href="#" class="btn-secondary">View Components</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the page to load
+        window.addEventListener('load', function() {
+            // After 1.5 seconds, hide loading screen and show main content
+            setTimeout(function() {
+                var loadingScreen = document.getElementById('loading-screen');
+                var mainContent = document.getElementById('main-content');
+                
+                // Fade out loading screen
+                loadingScreen.style.opacity = '0';
+                
+                // After fade out completes, remove loading screen and show main content
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                    mainContent.style.opacity = '1';
+                }, 500); // Match this with the CSS transition duration
+            }, 1500); // Adjust this value to change how long the loading screen shows
+        });
+
+        // Create sparkle effects during loading
+        function createSparkle() {
+            const sparkle = document.createElement('div');
+            sparkle.style.position = 'absolute';
+            sparkle.style.width = '2px';
+            sparkle.style.height = '2px';
+            sparkle.style.background = 'rgba(255, 255, 255, 0.8)';
+            sparkle.style.borderRadius = '50%';
+            sparkle.style.pointerEvents = 'none';
+            sparkle.style.zIndex = '10';
+            
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            
+            document.getElementById('loading-screen').appendChild(sparkle);
+            
+            // Animate sparkle
+            sparkle.animate([
+                { opacity: 0, transform: 'scale(0)' },
+                { opacity: 1, transform: 'scale(1)' },
+                { opacity: 0, transform: 'scale(0)' }
+            ], {
+                duration: 1000,
+                easing: 'ease-out'
+            });
+            
+            // Remove sparkle after animation
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1000);
+        }
+
+        // Create sparkles during loading
+        if (document.getElementById('loading-screen').style.display !== 'none') {
+            setInterval(createSparkle, 800);
+        }
+    </script>
+</body>
+</html>
